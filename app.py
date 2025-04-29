@@ -9,7 +9,7 @@ from datetime import datetime
 app = Flask(__name__)
 CORS(app, origins=["https://alaawf2.github.io"])  # ← حل مشكلة CORS
 
-SENDER_EMAIL = "wafaiealaa@orangebedbath.com"
+SENDER_EMAIL = "wafaiealaa@gmail.com"
 SENDER_PASS = "hgvz vubs ireq umza"
 RECIPIENT_EMAIL = "alaa.wafae@orangebedbath.com"
 
