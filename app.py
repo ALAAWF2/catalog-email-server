@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import CORS
 from openpyxl import Workbook
 import os
 import smtplib
@@ -6,6 +7,7 @@ from email.message import EmailMessage
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app, origins=["https://alaawf2.github.io"])  # ← حل مشكلة CORS
 
 SENDER_EMAIL = "wafaiealaa@orangebedbath.com"
 SENDER_PASS = "hgvz vubs ireq umza"
@@ -21,7 +23,6 @@ def submit_order():
     mall = data["mall"]
     orders = data["orders"]
 
-    # حفظ الطلبية كـ Excel
     date = datetime.now().strftime("%Y-%m-%d")
     filename = f"طلبية {mall} - {date}.xlsx"
     folder = "orders"
@@ -38,14 +39,12 @@ def submit_order():
         ws.append([item["code"], item["name"], item["qty"]])
     wb.save(filepath)
 
-    # إرسال الإيميل
     try:
         msg = EmailMessage()
         msg["Subject"] = f"طلبية جديدة من معرض {mall}"
         msg["From"] = SENDER_EMAIL
         msg["To"] = RECIPIENT_EMAIL
         msg.set_content(f"تم استلام طلبية جديدة من {mall}.\n\nمرفق ملف الطلبية بصيغة Excel.")
-
 
         with open(filepath, "rb") as f:
             file_data = f.read()
@@ -62,4 +61,3 @@ def submit_order():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
-
