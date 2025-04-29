@@ -1,2 +1,3 @@
 flask
 openpyxl
+pip install flask-cors
