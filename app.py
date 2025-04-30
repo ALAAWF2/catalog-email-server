@@ -72,9 +72,14 @@ def submit_order():
     ws.title = "طلبية"
     ws.append(["اسم المعرض:", mall])
     ws.append([])
-    ws.append(["الكود", "الاسم", "الكمية المطلوبة"])
-    for item in orders:
-        ws.append([item["code"], item["name"], item["qty"]])
+    ws.append(["الكود", "الاسم", "Alias", "الكمية المطلوبة"])
+for item in orders:
+    ws.append([
+        item.get("code", ""),
+        item.get("name", ""),
+        item.get("alias", ""),  # ← الجديد
+        item.get("qty", "")
+    ])
 
     if has_extras:
         ws.append([])
