@@ -51,6 +51,7 @@ def submit_order():
     data = request.json
     mall = data["mall"]
     orders = data["orders"]
+    has_extras = data.get("hasExtras", False)  # ← أخذ قيمة المستلزمات الإضافية
 
     # تحديد البريد حسب المعرض
     if mall in mallMap["Warehouse"]:
@@ -74,6 +75,12 @@ def submit_order():
     ws.append(["الكود", "الاسم", "الكمية المطلوبة"])
     for item in orders:
         ws.append([item["code"], item["name"], item["qty"]])
+
+    # إذا تم اختيار أن هناك مستلزمات إضافية، أضف ملاحظة في نهاية الملف
+    if has_extras:
+        ws.append([])
+        ws.append(["⚠️ يوجد مستلزمات إضافية مرافقة لهذه الطلبية."])
+
     wb.save(filepath)
 
     try:
