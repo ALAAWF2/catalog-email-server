@@ -67,19 +67,21 @@ def submit_order():
     os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, filename)
 
+    # إنشاء ملف Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "طلبية"
     ws.append(["اسم المعرض:", mall])
     ws.append([])
     ws.append(["الكود", "الاسم", "Alias", "الكمية المطلوبة"])
-for item in orders:
-    ws.append([
-        item.get("code", ""),
-        item.get("name", ""),
-        item.get("alias", ""),  # ← الجديد
-        item.get("qty", "")
-    ])
+
+    for item in orders:
+        ws.append([
+            item.get("code", ""),
+            item.get("name", ""),
+            item.get("alias", ""),  # إدراج alias
+            item.get("qty", "")
+        ])
 
     if has_extras:
         ws.append([])
@@ -87,7 +89,7 @@ for item in orders:
 
     wb.save(filepath)
 
-    # Store to Firestore
+    # تخزين في Firestore
     try:
         db.collection("orders").add({
             "date": date,
@@ -100,6 +102,7 @@ for item in orders:
     except Exception as firestore_error:
         return {"status": "error", "message": f"Firestore Error: {str(firestore_error)}"}
 
+    # إرسال بالبريد
     try:
         msg = EmailMessage()
         msg["Subject"] = f"طلبية جديدة من معرض {mall}"
