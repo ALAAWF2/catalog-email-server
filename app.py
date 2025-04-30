@@ -5,6 +5,8 @@ import os
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 app = Flask(__name__)
 CORS(app, origins=["https://alaawf2.github.io"])
@@ -12,13 +14,11 @@ CORS(app, origins=["https://alaawf2.github.io"])
 SENDER_EMAIL = "orangebed.order@gmail.com"
 SENDER_PASS = "qnop rqzl zuhy aceg"
 
-# يمكنك تغيير هذه الإيميلات لاحقاً بسهولة هنا
 mall_to_email = {
-    "Warehouse": "alaa.wafae@orangebedbath.com",         # جدة
-    "warehouse riyadh": "alaa.wafae@orangebedbath.com"   # الرياض
+    "Warehouse": "alaa.wafae@orangebedbath.com",
+    "warehouse riyadh": "alaa.wafae@orangebedbath.com"
 }
 
-# قائمة المعارض حسب المستودع
 mallMap = {
     "Warehouse": [
         "04-Andalos Mall", "05-Haifa Mall", "06-Red Sea Mall", "07-Arab Mall",
@@ -42,6 +42,11 @@ mallMap = {
     ]
 }
 
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate("firebase-service-account.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+
 @app.route("/")
 def home():
     return "✅ Flask Email API is live."
@@ -51,15 +56,10 @@ def submit_order():
     data = request.json
     mall = data["mall"]
     orders = data["orders"]
-    has_extras = data.get("hasExtras", False)  # ← أخذ قيمة المستلزمات الإضافية
+    has_extras = data.get("hasExtras", False)
 
-    # تحديد البريد حسب المعرض
-    if mall in mallMap["Warehouse"]:
-        recipient = mall_to_email["Warehouse"]
-    elif mall in mallMap["warehouse riyadh"]:
-        recipient = mall_to_email["warehouse riyadh"]
-    else:
-        recipient = mall_to_email["Warehouse"]  # fallback
+    warehouse = "Warehouse" if mall in mallMap["Warehouse"] else "warehouse riyadh"
+    recipient = mall_to_email.get(warehouse, mall_to_email["Warehouse"])
 
     date = datetime.now().strftime("%Y-%m-%d")
     filename = f"طلبية {mall} - {date}.xlsx"
@@ -76,12 +76,24 @@ def submit_order():
     for item in orders:
         ws.append([item["code"], item["name"], item["qty"]])
 
-    # إذا تم اختيار أن هناك مستلزمات إضافية، أضف ملاحظة في نهاية الملف
     if has_extras:
         ws.append([])
         ws.append(["⚠️ يوجد مستلزمات إضافية مرافقة لهذه الطلبية."])
 
     wb.save(filepath)
+
+    # Store to Firestore
+    try:
+        db.collection("orders").add({
+            "date": date,
+            "mall": mall,
+            "warehouse": warehouse,
+            "hasExtras": has_extras,
+            "orders": orders,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+    except Exception as firestore_error:
+        return {"status": "error", "message": f"Firestore Error: {str(firestore_error)}"}
 
     try:
         msg = EmailMessage()
